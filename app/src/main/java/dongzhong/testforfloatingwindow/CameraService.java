@@ -3,6 +3,7 @@ package dongzhong.testforfloatingwindow;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.PixelFormat;
+import android.media.Image;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
@@ -15,6 +16,7 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 
 public class CameraService extends Service {
@@ -23,29 +25,11 @@ public class CameraService extends Service {
     private WindowManager windowManager;
     private WindowManager.LayoutParams layoutParams;
     private View displayView;
+    ImageButton imageButton;
 
     @Override
     public void onCreate() {
         super.onCreate();
-        isStarted = true;
-        windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        layoutParams = new WindowManager.LayoutParams();
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            layoutParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
-        } else {
-            layoutParams.type = WindowManager.LayoutParams.TYPE_PHONE;
-        }
-        layoutParams.format = PixelFormat.RGBA_8888;
-        layoutParams.gravity = Gravity.LEFT | Gravity.TOP;
-        layoutParams.flags=WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-        DisplayMetrics dm=new DisplayMetrics();
-        windowManager.getDefaultDisplay().getMetrics(dm);
-        int screenWidth=dm.widthPixels;
-        int screenHeight=dm.heightPixels;
-        layoutParams.x=screenWidth;
-        layoutParams.y=screenHeight;
-        layoutParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
-        layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
     }
 
     @Nullable
@@ -60,18 +44,47 @@ public class CameraService extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private void showFloatingWindow() {
+    public void showFloatingWindow() {
         if (Settings.canDrawOverlays(this)) {
+            isStarted = true;
+            windowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+            layoutParams = new WindowManager.LayoutParams();
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                layoutParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+            } else {
+                layoutParams.type = WindowManager.LayoutParams.TYPE_PHONE;
+            }
+            layoutParams.format = PixelFormat.RGBA_8888;
+            layoutParams.gravity = Gravity.LEFT | Gravity.TOP;
+            layoutParams.flags=WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+            DisplayMetrics dm=new DisplayMetrics();
+            windowManager.getDefaultDisplay().getMetrics(dm);
+            int screenWidth=dm.widthPixels;
+            int screenHeight=dm.heightPixels;
+            layoutParams.x=screenWidth;
+            layoutParams.y=screenHeight;
+            layoutParams.width = WindowManager.LayoutParams.WRAP_CONTENT;
+            layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT;
+
             LayoutInflater layoutInflater = LayoutInflater.from(this);
             displayView = layoutInflater.inflate(R.layout.photo, null);
             displayView.setOnTouchListener(new FloatingOnTouchListener());
             windowManager.addView(displayView, layoutParams);
-        }
+            imageButton=(ImageButton)displayView.findViewById(R.id.close_window);
+            imageButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    windowManager.removeView(displayView);
+                    isStarted=false;//太重要了
+                }
+            });
+            }
     }
     @Override
     public void onDestroy(){
         super.onDestroy();
         windowManager.removeView(displayView);
+       isStarted=false;
     }
 
 
